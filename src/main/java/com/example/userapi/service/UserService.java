@@ -1,13 +1,14 @@
 package com.example.userapi.service;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.example.userapi.dto.UserRequest;
 import com.example.userapi.exception.ResourceNotFoundException;
 import com.example.userapi.model.User;
 import com.example.userapi.repository.UserRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class UserService {
