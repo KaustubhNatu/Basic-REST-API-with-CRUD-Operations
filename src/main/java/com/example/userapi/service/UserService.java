@@ -4,57 +4,41 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.userapi.dto.UserRequest;
-import com.example.userapi.exception.ResourceNotFoundException;
 import com.example.userapi.model.User;
 import com.example.userapi.repository.UserRepository;
 
 @Service
+@Transactional
 public class UserService {
-
     private final UserRepository repo;
 
-    public UserService(UserRepository repo) {
-        this.repo = repo;
-    }
+    public UserService(UserRepository repo) { this.repo = repo; }
 
-    public User create(UserRequest req) {
-        String emailNormalized = req.getEmail().trim().toLowerCase();
-        if (repo.existsByEmail(emailNormalized)) {
-            throw new IllegalArgumentException("email already exists");
+    public User create(User user) {
+        if (repo.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Email already exists");
         }
-
-        User u = new User(UUID.randomUUID(),
-                          req.getName().trim(),
-                          emailNormalized,
-                          req.getAge());
-        return repo.save(u);
+        return repo.save(user);
     }
 
-    public User getById(UUID id) {
-        return repo.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException("User not found with id: " + id));
+    public User update(UUID id, User newUser) {
+        return repo.findById(id).map(u -> {
+            u.setName(newUser.getName());
+            u.setEmail(newUser.getEmail());
+            u.setAge(newUser.getAge());
+            return repo.save(u);
+        }).orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
-    public List<User> getAll() {
-        return repo.findAll();
+    @Transactional(readOnly = true)
+    public User get(UUID id) { 
+        return repo.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
-    public User update(UUID id, UserRequest req) {
-        User existing = repo.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException("User not found with id: " + id));
+    @Transactional(readOnly = true)
+    public List<User> getAll() { return repo.findAll(); }
 
-        existing.setName(req.getName().trim());
-        existing.setEmail(req.getEmail().trim().toLowerCase());
-        existing.setAge(req.getAge());
-        return repo.save(existing);
-    }
-
-    public void delete(UUID id) {
-        if (!repo.findById(id).isPresent()) {
-            throw new ResourceNotFoundException("User not found with id: " + id);
-        }
-        repo.deleteById(id);
-    }
+    public void delete(UUID id) { repo.deleteById(id); }
 }
